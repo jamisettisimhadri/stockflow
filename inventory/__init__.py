@@ -1,0 +1,3 @@
+"""
+Inventory app package init.
+"""

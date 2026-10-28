@@ -1,0 +1,3 @@
+"""
+Inventory migrations package.
+"""

@@ -1,0 +1,196 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Products{% endblock %}
+{% block page_title %}Products{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <p class="text-muted mb-0">
+      {% if query %}
+        {{ filtered_count }} result{{ filtered_count|pluralize }} for "<strong>{{ query }}</strong>"
+      {% else %}
+        {{ total_count }} product{{ total_count|pluralize }} in your inventory
+      {% endif %}
+    </p>
+  </div>
+  <a href="{% url 'product_add' %}" class="btn btn-primary fw-medium">
+    <i class="bi bi-plus-lg me-2"></i>Add Product
+  </a>
+</div>
+
+<!-- Search Bar -->
+<div class="card content-card mb-4">
+  <div class="card-body py-3">
+    <form method="get" class="d-flex gap-2">
+      <div class="input-group">
+        <span class="input-group-text bg-white border-end-0">
+          <i class="bi bi-search text-muted"></i>
+        </span>
+        <input
+          type="search"
+          name="q"
+          value="{{ query|default:'' }}"
+          class="form-control border-start-0 ps-0"
+          placeholder="Search by product name or SKU…"
+          id="searchInput"
+        >
+      </div>
+      <button type="submit" class="btn btn-outline-primary">Search</button>
+      {% if query %}
+      <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-x-lg"></i> Clear
+      </a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<!-- Products Table -->
+<div class="card content-card">
+  <div class="card-body p-0">
+    {% if total_count == 0 %}
+    <!-- No products at all -->
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <i class="bi bi-box-seam"></i>
+      </div>
+      <h5 class="empty-state-title">No products yet</h5>
+      <p class="empty-state-text">
+        Create your first product to start tracking inventory.
+      </p>
+      <a href="{% url 'product_add' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-2"></i>Add Your First Product
+      </a>
+    </div>
+
+    {% elif products_with_status|length == 0 %}
+    <!-- No results for current search -->
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <i class="bi bi-search"></i>
+      </div>
+      <h5 class="empty-state-title">No results found</h5>
+      <p class="empty-state-text">
+        No products match "<strong>{{ query }}</strong>". Try a different search term.
+      </p>
+      <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-x-lg me-2"></i>Clear Search
+      </a>
+    </div>
+
+    {% else %}
+    <!-- Product Table -->
+    <div class="table-responsive">
+      <table class="table table-hover data-table mb-0">
+        <thead>
+          <tr>
+            <th>Product Name</th>
+            <th>SKU</th>
+            <th class="text-center">Quantity</th>
+            <th class="text-end">Cost Price</th>
+            <th class="text-end">Selling Price</th>
+            <th>Status</th>
+            <th>Last Updated</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in products_with_status %}
+          {% with product=item.product %}
+          <tr class="{% if item.is_low_stock %}row-low-stock{% endif %}">
+            <td>
+              <div class="product-name-cell">
+                <span class="fw-medium">{{ product.name }}</span>
+                {% if product.description %}
+                <span class="product-desc text-muted">{{ product.description|truncatechars:50 }}</span>
+                {% endif %}
+              </div>
+            </td>
+            <td><code class="sku-badge">{{ product.sku }}</code></td>
+            <td class="text-center">
+              <span class="qty-badge {% if product.quantity_on_hand == 0 %}qty-badge--out{% elif item.is_low_stock %}qty-badge--low{% else %}qty-badge--ok{% endif %}">
+                {{ product.quantity_on_hand }}
+              </span>
+            </td>
+            <td class="text-end text-muted">
+              {% if product.cost_price %}${{ product.cost_price }}{% else %}<span class="text-muted fst-italic">—</span>{% endif %}
+            </td>
+            <td class="text-end text-muted">
+              {% if product.selling_price %}${{ product.selling_price }}{% else %}<span class="text-muted fst-italic">—</span>{% endif %}
+            </td>
+            <td>
+              {% if product.quantity_on_hand == 0 %}
+              <span class="status-badge status-badge--out">Out of Stock</span>
+              {% elif item.is_low_stock %}
+              <span class="status-badge status-badge--low">Low Stock</span>
+              {% else %}
+              <span class="status-badge status-badge--ok">In Stock</span>
+              {% endif %}
+            </td>
+            <td class="text-muted small">
+              {{ product.updated_at|date:"M j, Y" }}
+            </td>
+            <td class="text-end">
+              <div class="action-buttons">
+                <a href="{% url 'product_edit' product.pk %}"
+                   class="btn btn-sm btn-outline-primary"
+                   title="Edit {{ product.name }}">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <a href="{% url 'product_delete' product.pk %}"
+                   class="btn btn-sm btn-outline-danger"
+                   title="Delete {{ product.name }}">
+                  <i class="bi bi-trash"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endwith %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="pagination-wrapper">
+      <div class="text-muted small">
+        Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} products
+      </div>
+      <nav aria-label="Product list pagination">
+        <ul class="pagination pagination-sm mb-0">
+          {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?{% if query %}q={{ query }}&{% endif %}page={{ page_obj.previous_page_number }}">
+              <i class="bi bi-chevron-left"></i>
+            </a>
+          </li>
+          {% endif %}
+
+          {% for num in page_obj.paginator.page_range %}
+          {% if page_obj.number == num %}
+          <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+          {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+          <li class="page-item">
+            <a class="page-link" href="?{% if query %}q={{ query }}&{% endif %}page={{ num }}">{{ num }}</a>
+          </li>
+          {% endif %}
+          {% endfor %}
+
+          {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?{% if query %}q={{ query }}&{% endif %}page={{ page_obj.next_page_number }}">
+              <i class="bi bi-chevron-right"></i>
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

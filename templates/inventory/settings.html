@@ -1,0 +1,104 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Settings{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+<div class="row g-4 pb-5">
+  <!-- 1. Organization Settings Card (Left Column) -->
+  <div class="col-lg-6">
+    <div class="card content-card h-100">
+      <div class="card-header content-card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-gear me-2 text-primary"></i>Organization Settings
+        </h5>
+      </div>
+      <div class="card-body p-4 d-flex flex-column">
+        <form method="post" novalidate class="d-flex flex-column flex-grow-1">
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger mb-4">
+            {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+          </div>
+          {% endif %}
+
+          <!-- Organization Name -->
+          <div class="form-section mb-4">
+            <h6 class="form-section-title">Organization</h6>
+            <div class="mb-3">
+              <label for="{{ form.name.id_for_label }}" class="form-label fw-medium">Organization Name</label>
+              {{ form.name }}
+              {% if form.name.errors %}
+              <div class="invalid-feedback d-block">
+                {% for e in form.name.errors %}{{ e }}{% endfor %}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Low-Stock Threshold -->
+          <div class="form-section mb-4">
+            <h6 class="form-section-title">Inventory Alerts</h6>
+            <div class="mb-2">
+              <label for="{{ form.default_low_stock_threshold.id_for_label }}" class="form-label fw-medium">
+                {{ form.default_low_stock_threshold.label }}
+              </label>
+              <div class="row g-3 align-items-stretch">
+                <div class="col-sm-4">
+                  {{ form.default_low_stock_threshold }}
+                  {% if form.default_low_stock_threshold.errors %}
+                  <div class="invalid-feedback d-block">
+                    {% for e in form.default_low_stock_threshold.errors %}{{ e }}{% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+                <div class="col-sm-8">
+                  <div class="settings-help-box h-100">
+                    <i class="bi bi-info-circle text-primary me-2 flex-shrink-0"></i>
+                    <span class="text-muted small">
+                      {{ form.default_low_stock_threshold.help_text }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end pt-3 mt-auto">
+            <button type="submit" class="btn btn-primary fw-medium px-4">
+              <i class="bi bi-check-lg me-2"></i>Save Settings
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Account Card (Right Column) -->
+  <div class="col-lg-6">
+    <div class="card content-card h-100">
+      <div class="card-header content-card-header d-flex align-items-center justify-content-between">
+        <h5 class="mb-0">
+          <i class="bi bi-person-circle me-2 text-primary"></i>Account
+        </h5>
+        <a href="{% url 'profile' %}" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-pencil me-1"></i>Edit Profile
+        </a>
+      </div>
+      <div class="card-body p-4">
+        <div class="row g-3">
+          <div class="col-sm-4 text-muted">Email</div>
+          <div class="col-sm-8 fw-medium text-dark text-break">{{ request.user.email }}</div>
+
+          <div class="col-sm-4 text-muted">Name</div>
+          <div class="col-sm-8 fw-medium text-dark">{{ request.user.get_full_name|default:"—" }}</div>
+
+          <div class="col-sm-4 text-muted">Member since</div>
+          <div class="col-sm-8 fw-medium text-dark">{{ request.user.date_joined|date:"F j, Y" }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

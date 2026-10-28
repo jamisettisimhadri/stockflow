@@ -1,0 +1,188 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Welcome Banner -->
+<div class="welcome-banner mb-4">
+  <div class="welcome-text">
+    <h2 class="welcome-greeting">
+      Good to see you, {{ request.user.get_short_name }}!
+    </h2>
+    <p class="welcome-sub">Here's a snapshot of <strong>{{ org.name }}</strong>'s inventory.</p>
+  </div>
+  <a href="{% url 'product_add' %}" class="btn btn-primary btn-add-product">
+    <i class="bi bi-plus-lg me-2"></i>Add Product
+  </a>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-4 mb-5">
+  <!-- Total Products -->
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card stat-card--blue">
+      <div class="stat-card-body">
+        <div class="stat-card-info">
+          <div class="stat-card-label">Total Products</div>
+          <div class="stat-card-value">{{ total_products }}</div>
+        </div>
+        <div class="stat-card-icon">
+          <i class="bi bi-box-seam-fill"></i>
+        </div>
+      </div>
+      <div class="stat-card-footer">
+        <a href="{% url 'product_list' %}" class="stat-card-link">
+          View all products <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Total Units -->
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card stat-card--teal">
+      <div class="stat-card-body">
+        <div class="stat-card-info">
+          <div class="stat-card-label">Units in Stock</div>
+          <div class="stat-card-value">{{ total_units }}</div>
+        </div>
+        <div class="stat-card-icon">
+          <i class="bi bi-stack"></i>
+        </div>
+      </div>
+      <div class="stat-card-footer">
+        <span class="stat-card-note">Across all products</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inventory Value -->
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card stat-card--green">
+      <div class="stat-card-body">
+        <div class="stat-card-info">
+          <div class="stat-card-label">Inventory Value</div>
+          <div class="stat-card-value">${{ total_value|floatformat:2 }}</div>
+        </div>
+        <div class="stat-card-icon">
+          <i class="bi bi-currency-dollar"></i>
+        </div>
+      </div>
+      <div class="stat-card-footer">
+        <span class="stat-card-note">Products with cost price only</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Low Stock Alert -->
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card {% if low_stock_count > 0 %}stat-card--red{% else %}stat-card--gray{% endif %}">
+      <div class="stat-card-body">
+        <div class="stat-card-info">
+          <div class="stat-card-label">Low Stock Alerts</div>
+          <div class="stat-card-value">{{ low_stock_count }}</div>
+        </div>
+        <div class="stat-card-icon">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+        </div>
+      </div>
+      <div class="stat-card-footer">
+        {% if low_stock_count > 0 %}
+        <span class="stat-card-note text-danger fw-medium">Needs attention</span>
+        {% else %}
+        <span class="stat-card-note">All stock levels healthy</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Low Stock Table -->
+<div class="card content-card">
+  <div class="card-header content-card-header">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+      <h5 class="mb-0">Low Stock Products</h5>
+      {% if low_stock_count > 0 %}
+      <span class="badge bg-danger ms-1">{{ low_stock_count }}</span>
+      {% endif %}
+    </div>
+    <a href="{% url 'product_list' %}" class="btn btn-sm btn-outline-secondary">
+      View All
+    </a>
+  </div>
+
+  <div class="card-body p-0">
+    {% if total_products == 0 %}
+    <!-- Empty state — no products yet -->
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <i class="bi bi-box-seam"></i>
+      </div>
+      <h5 class="empty-state-title">No products yet</h5>
+      <p class="empty-state-text">
+        Start building your inventory by adding your first product.
+      </p>
+      <a href="{% url 'product_add' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-2"></i>Add Your First Product
+      </a>
+    </div>
+    {% elif low_stock_products|length == 0 %}
+    <!-- All good — no low stock -->
+    <div class="empty-state empty-state--success">
+      <div class="empty-state-icon text-success">
+        <i class="bi bi-check-circle-fill"></i>
+      </div>
+      <h5 class="empty-state-title">All stock levels are healthy</h5>
+      <p class="empty-state-text">
+        None of your {{ total_products }} product{{ total_products|pluralize }} are running low.
+        Low-stock threshold is set to <strong>{{ org.default_low_stock_threshold }}</strong> units.
+      </p>
+    </div>
+    {% else %}
+    <!-- Low stock table -->
+    <div class="table-responsive">
+      <table class="table table-hover data-table mb-0">
+        <thead>
+          <tr>
+            <th>Product Name</th>
+            <th>SKU</th>
+            <th class="text-center">Qty on Hand</th>
+            <th class="text-center">Threshold</th>
+            <th>Status</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for product in low_stock_products %}
+          <tr>
+            <td>
+              <span class="fw-medium">{{ product.name }}</span>
+            </td>
+            <td><code class="sku-badge">{{ product.sku }}</code></td>
+            <td class="text-center">
+              <span class="qty-badge qty-badge--low">{{ product.quantity_on_hand }}</span>
+            </td>
+            <td class="text-center text-muted">{{ product.get_effective_threshold }}</td>
+            <td>
+              {% if product.quantity_on_hand == 0 %}
+              <span class="status-badge status-badge--out">Out of Stock</span>
+              {% else %}
+              <span class="status-badge status-badge--low">Low Stock</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <a href="{% url 'product_edit' product.pk %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-pencil me-1"></i>Edit
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

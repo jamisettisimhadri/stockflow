@@ -1,0 +1,65 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Delete {{ product.name }}{% endblock %}
+{% block page_title %}Delete Product{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6 col-md-8">
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'product_list' %}">Products</a></li>
+        <li class="breadcrumb-item active">Delete</li>
+      </ol>
+    </nav>
+
+    <div class="card content-card border-danger">
+      <div class="card-header bg-danger bg-opacity-10 border-bottom border-danger border-opacity-25">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
+          <h5 class="mb-0 text-danger">Confirm Deletion</h5>
+        </div>
+      </div>
+      <div class="card-body p-4">
+        <p class="mb-3 text-muted">
+          You are about to permanently delete this product. This action cannot be undone.
+        </p>
+
+        <!-- Product Details -->
+        <div class="delete-product-card">
+          <div class="delete-product-icon">
+            <i class="bi bi-box-seam-fill"></i>
+          </div>
+          <div class="delete-product-info">
+            <div class="delete-product-name">{{ product.name }}</div>
+            <div class="delete-product-meta">
+              <span>SKU: <code>{{ product.sku }}</code></span>
+              <span class="mx-2">·</span>
+              <span>Qty: {{ product.quantity_on_hand }}</span>
+              {% if product.cost_price %}
+              <span class="mx-2">·</span>
+              <span>Cost: ${{ product.cost_price }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <form method="post" class="mt-4">
+          {% csrf_token %}
+          <div class="d-flex gap-2 justify-content-end">
+            <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left me-2"></i>Cancel
+            </a>
+            <button type="submit" class="btn btn-danger fw-medium" id="confirmDeleteBtn">
+              <i class="bi bi-trash me-2"></i>Yes, Delete Product
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

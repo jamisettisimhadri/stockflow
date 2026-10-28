@@ -1,0 +1,3 @@
+"""
+StockFlow package init.
+"""

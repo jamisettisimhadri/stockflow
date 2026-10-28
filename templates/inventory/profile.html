@@ -1,0 +1,231 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}My Profile{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- Left Column: User Summary Card -->
+  <div class="col-lg-4">
+    <div class="card content-card text-center p-4">
+      <div class="profile-avatar-lg mb-3">
+        {{ request.user.get_short_name|slice:":1"|upper }}
+      </div>
+      <h5 class="fw-bold text-navy mb-1">{{ request.user.get_full_name }}</h5>
+      <p class="text-muted small mb-3">{{ request.user.email }}</p>
+
+      <div class="d-flex justify-content-center gap-2 mb-4">
+        <span class="badge bg-teal-subtle px-3 py-2 rounded-pill font-monospace small">
+          <i class="bi bi-shield-check me-1"></i>Account Owner
+        </span>
+      </div>
+
+      <div class="border-top pt-3 mb-3 text-start">
+        <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+          <span class="text-muted small"><i class="bi bi-building me-2 text-teal"></i>Organization</span>
+          <span class="fw-semibold text-dark">{{ org.name }}</span>
+        </div>
+        <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+          <span class="text-muted small"><i class="bi bi-calendar3 me-2 text-teal"></i>Member Since</span>
+          <span class="fw-medium text-dark">{{ request.user.date_joined|date:"M d, Y" }}</span>
+        </div>
+        <div class="d-flex align-items-center justify-content-between py-2">
+          <span class="text-muted small"><i class="bi bi-clock-history me-2 text-teal"></i>Last Login</span>
+          <span class="fw-medium text-dark">{{ request.user.last_login|date:"M d, Y H:i"|default:"Recently" }}</span>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="row g-2 pt-2">
+        <div class="col-6">
+          <div class="profile-stat-box">
+            <div class="profile-stat-value text-teal">{{ total_products }}</div>
+            <div class="profile-stat-label">Products</div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="profile-stat-box">
+            <div class="profile-stat-value text-navy">{{ org.default_low_stock_threshold }}</div>
+            <div class="profile-stat-label">Alert Limit</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 pt-3 border-top">
+        <a href="{% url 'settings' %}" class="btn btn-outline-secondary btn-sm w-100">
+          <i class="bi bi-gear me-1"></i>Manage Organization Settings
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Edit Profile & Password Tabs -->
+  <div class="col-lg-8">
+    <div class="card content-card">
+      <div class="card-header content-card-header p-0 border-bottom">
+        <ul class="nav nav-tabs border-0 px-3 pt-2" id="profileTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link {% if active_tab != 'password' %}active fw-semibold{% endif %}"
+                    id="personal-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#personal-pane"
+                    type="button"
+                    role="tab"
+                    aria-controls="personal-pane"
+                    aria-selected="{% if active_tab != 'password' %}true{% else %}false{% endif %}">
+              <i class="bi bi-person me-2"></i>Personal Info
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link {% if active_tab == 'password' %}active fw-semibold{% endif %}"
+                    id="security-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#security-pane"
+                    type="button"
+                    role="tab"
+                    aria-controls="security-pane"
+                    aria-selected="{% if active_tab == 'password' %}true{% else %}false{% endif %}">
+              <i class="bi bi-key me-2"></i>Change Password
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <div class="card-body p-4">
+        <div class="tab-content" id="profileTabsContent">
+
+          <!-- Tab 1: Personal Details -->
+          <div class="tab-pane fade {% if active_tab != 'password' %}show active{% endif %}"
+               id="personal-pane"
+               role="tabpanel"
+               aria-labelledby="personal-tab"
+               tabindex="0">
+            <form method="post" novalidate>
+              {% csrf_token %}
+              <input type="hidden" name="action" value="profile">
+
+              {% if profile_form.non_field_errors %}
+              <div class="alert alert-danger mb-4">
+                {% for error in profile_form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+              </div>
+              {% endif %}
+
+              <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                  <label for="{{ profile_form.first_name.id_for_label }}" class="form-label fw-medium">
+                    First Name
+                  </label>
+                  {{ profile_form.first_name }}
+                  {% if profile_form.first_name.errors %}
+                  <div class="invalid-feedback d-block">
+                    {% for e in profile_form.first_name.errors %}{{ e }}{% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+                <div class="col-md-6">
+                  <label for="{{ profile_form.last_name.id_for_label }}" class="form-label fw-medium">
+                    Last Name
+                  </label>
+                  {{ profile_form.last_name }}
+                  {% if profile_form.last_name.errors %}
+                  <div class="invalid-feedback d-block">
+                    {% for e in profile_form.last_name.errors %}{{ e }}{% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="mb-4">
+                <label for="{{ profile_form.email.id_for_label }}" class="form-label fw-medium">
+                  Email Address <span class="text-danger">*</span>
+                </label>
+                {{ profile_form.email }}
+                <div class="form-text">
+                  Your email address is your login credential and where notifications are delivered.
+                </div>
+                {% if profile_form.email.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for e in profile_form.email.errors %}{{ e }}{% endfor %}
+                </div>
+                {% endif %}
+              </div>
+
+              <div class="d-flex justify-content-end pt-3 border-top">
+                <button type="submit" class="btn btn-primary fw-medium px-4">
+                  <i class="bi bi-check-lg me-2"></i>Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Tab 2: Change Password -->
+          <div class="tab-pane fade {% if active_tab == 'password' %}show active{% endif %}"
+               id="security-pane"
+               role="tabpanel"
+               aria-labelledby="security-tab"
+               tabindex="0">
+            <form method="post" novalidate>
+              {% csrf_token %}
+              <input type="hidden" name="action" value="password">
+
+              {% if password_form.non_field_errors %}
+              <div class="alert alert-danger mb-4">
+                {% for error in password_form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+              </div>
+              {% endif %}
+
+              <div class="mb-3">
+                <label for="{{ password_form.old_password.id_for_label }}" class="form-label fw-medium">
+                  Current Password <span class="text-danger">*</span>
+                </label>
+                {{ password_form.old_password }}
+                {% if password_form.old_password.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for e in password_form.old_password.errors %}{{ e }}{% endfor %}
+                </div>
+                {% endif %}
+              </div>
+
+              <div class="mb-3">
+                <label for="{{ password_form.new_password1.id_for_label }}" class="form-label fw-medium">
+                  New Password <span class="text-danger">*</span>
+                </label>
+                {{ password_form.new_password1 }}
+                {% if password_form.new_password1.help_text %}
+                <div class="form-text small">
+                  {{ password_form.new_password1.help_text|safe }}
+                </div>
+                {% endif %}
+                {% if password_form.new_password1.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for e in password_form.new_password1.errors %}{{ e }}{% endfor %}
+                </div>
+                {% endif %}
+              </div>
+
+              <div class="mb-4">
+                <label for="{{ password_form.new_password2.id_for_label }}" class="form-label fw-medium">
+                  Confirm New Password <span class="text-danger">*</span>
+                </label>
+                {{ password_form.new_password2 }}
+                {% if password_form.new_password2.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for e in password_form.new_password2.errors %}{{ e }}{% endfor %}
+                </div>
+                {% endif %}
+              </div>
+
+              <div class="d-flex justify-content-end pt-3 border-top">
+                <button type="submit" class="btn btn-primary fw-medium px-4">
+                  <i class="bi bi-shield-lock me-2"></i>Update Password
+                </button>
+              </div>
+            </form>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
