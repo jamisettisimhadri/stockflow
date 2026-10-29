@@ -12,9 +12,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-stockflow-dev-key-change-in-production-12345'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG =  False
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'stockflow-p5lx.onrender.com', '.onrender.com']
+CSRF_TRUSTED_ORIGINS = ['https://stockflow-p5lx.onrender.com']
+# Application definition
 
 # Application definition
 INSTALLED_APPS = [
